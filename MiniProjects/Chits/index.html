@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucky Chits</title>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Patrick+Hand&display=swap');
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Patrick Hand", cursive;
+        background:
+            linear-gradient(rgba(255,255,255,.08), rgba(255,255,255,.08)),
+            #d8b98a;
+        color: #29251f;
+        overflow-x: hidden;
+    }
+
+    /* Notebook sheet */
+    .notebook {
+        width: min(1100px, 94%);
+        min-height: 92vh;
+        margin: 4vh auto;
+        position: relative;
+        padding: 45px 55px 60px 90px;
+
+        background:
+            repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 31px,
+                rgba(80,130,180,.22) 32px
+            ),
+            #fffdf3;
+
+        box-shadow:
+            0 12px 30px rgba(0,0,0,.25),
+            inset 0 0 40px rgba(120,80,30,.08);
+
+        border-radius: 4px;
+    }
+
+    /* Red notebook margin */
+    .notebook::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 68px;
+        width: 2px;
+        background: rgba(190,65,65,.55);
+    }
+
+    /* Spiral holes */
+    .holes {
+        position: absolute;
+        left: 20px;
+        top: 40px;
+        bottom: 40px;
+        width: 30px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+
+    .hole {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: #ddd5c5;
+        box-shadow:
+            inset 2px 2px 3px rgba(0,0,0,.25),
+            1px 1px 1px rgba(255,255,255,.8);
+    }
+
+    h1 {
+        margin: 0;
+        font-family: "Caveat", cursive;
+        font-size: clamp(52px, 8vw, 90px);
+        line-height: .9;
+        color: #293d59;
+        transform: rotate(-1deg);
+        text-shadow: 2px 2px 0 rgba(0,0,0,.05);
+    }
+
+    .subtitle {
+        font-size: 23px;
+        margin: 8px 0 35px;
+        color: #665d51;
+        transform: rotate(.5deg);
+    }
+
+    .section {
+        margin: 25px 0;
+    }
+
+    label {
+        display: block;
+        font-size: 23px;
+        margin-bottom: 8px;
+    }
+
+    .ideas {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        max-width: 750px;
+    }
+
+    input {
+        width: 100%;
+        padding: 13px 16px;
+        border: none;
+        border-bottom: 2px dashed #777;
+        background: rgba(255,255,255,.55);
+        font-family: "Patrick Hand", cursive;
+        font-size: 19px;
+        outline: none;
+    }
+
+    input:focus {
+        background: white;
+        border-bottom-color: #293d59;
+    }
+
+    .player-choice {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .player-btn,
+    .main-btn {
+        border: none;
+        font-family: "Patrick Hand", cursive;
+        font-size: 21px;
+        padding: 12px 25px;
+        cursor: pointer;
+        transition: .2s;
+    }
+
+    .player-btn {
+        background: #f5d96c;
+        box-shadow: 3px 4px 0 #c5a63b;
+        transform: rotate(-1deg);
+    }
+
+    .player-btn:nth-child(2) {
+        background: #f5a7a7;
+        box-shadow: 3px 4px 0 #bf7777;
+        transform: rotate(1deg);
+    }
+
+    .player-btn.active {
+        transform: translateY(3px) rotate(-1deg);
+        box-shadow: 1px 1px 0 #999;
+    }
+
+    .main-btn {
+        background: #293d59;
+        color: white;
+        box-shadow: 4px 5px 0 #172333;
+        margin-top: 15px;
+    }
+
+    .main-btn:hover,
+    .player-btn:hover {
+        transform: translateY(-2px) rotate(0deg);
+    }
+
+    .main-btn:active,
+    .player-btn:active {
+        transform: translateY(3px);
+        box-shadow: 1px 1px 0 #555;
+    }
+
+    /* Game area */
+    #game {
+        display: none;
+        margin-top: 30px;
+    }
+
+    .turn {
+        text-align: center;
+        font-family: "Caveat", cursive;
+        font-size: 42px;
+        color: #293d59;
+        margin-bottom: 10px;
+    }
+
+    .instruction {
+        text-align: center;
+        font-size: 21px;
+        color: #665d51;
+    }
+
+    /* Table */
+    .table {
+        position: relative;
+        height: 470px;
+        margin-top: 20px;
+        overflow: hidden;
+
+        background:
+            radial-gradient(circle at 30% 20%, rgba(255,255,255,.08), transparent 30%),
+            #b98955;
+
+        border: 8px solid #8c6039;
+        border-radius: 10px;
+
+        box-shadow:
+            inset 0 0 30px rgba(0,0,0,.25),
+            0 8px 15px rgba(0,0,0,.2);
+    }
+
+    /* Chits */
+    .chit {
+        position: absolute;
+        width: 125px;
+        height: 75px;
+        cursor: pointer;
+        transform-origin: center;
+        transition:
+            transform .35s ease,
+            filter .3s ease;
+
+        background:
+            linear-gradient(
+                135deg,
+                #eee7d3,
+                #d7cfba
+            );
+
+        border-radius: 45% 55% 48% 52%;
+        box-shadow:
+            5px 8px 7px rgba(0,0,0,.3),
+            inset 2px 2px 5px rgba(255,255,255,.6);
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        color: transparent;
+        user-select: none;
+
+        animation: dropIn .7s ease forwards;
+    }
+
+    .chit::before,
+    .chit::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(0,0,0,.12);
+    }
+
+    .chit::before {
+        width: 75%;
+        height: 5px;
+        transform: rotate(15deg);
+        top: 30%;
+    }
+
+    .chit::after {
+        width: 55%;
+        height: 4px;
+        transform: rotate(-20deg);
+        bottom: 25%;
+    }
+
+    .chit:hover {
+        filter: brightness(1.12);
+        transform: scale(1.12) rotate(0deg) !important;
+        z-index: 20;
+    }
+
+    .chit.picked {
+        animation: pickUp .7s ease forwards;
+        pointer-events: none;
+    }
+
+    .chit.revealed {
+        width: 180px;
+        height: 110px;
+        color: #29251f;
+        background: #fff6b8;
+        border-radius: 4px;
+        z-index: 50;
+        transform: translate(-50%, -50%) rotate(0deg) !important;
+        left: 50% !important;
+        top: 50% !important;
+        font-size: 23px;
+        text-align: center;
+        padding: 15px;
+        box-shadow: 0 12px 25px rgba(0,0,0,.35);
+    }
+
+    .chit.revealed::before,
+    .chit.revealed::after {
+        display: none;
+    }
+
+    @keyframes dropIn {
+        0% {
+            transform: translateY(-400px) rotate(360deg) scale(.4);
+            opacity: 0;
+        }
+        70% {
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(0) rotate(var(--rotation)) scale(1);
+        }
+    }
+
+    @keyframes pickUp {
+        0% {
+            transform: scale(1) rotate(0);
+        }
+        50% {
+            transform: scale(1.4) rotate(10deg) translateY(-80px);
+        }
+        100% {
+            transform: scale(.1) rotate(720deg) translateY(-500px);
+            opacity: 0;
+        }
+    }
+
+    /* Crumpling animation */
+    .paper {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        width: 160px;
+        height: 90px;
+        background: #f6efdc;
+        transform: translate(-50%, -50%);
+        z-index: 999;
+        box-shadow: 0 10px 25px rgba(0,0,0,.3);
+        display: none;
+    }
+
+    .paper.crumpling {
+        display: block;
+        animation: crumple 1.5s ease forwards;
+    }
+
+    @keyframes crumple {
+        0% {
+            border-radius: 0;
+            transform: translate(-50%,-50%) rotate(0) scale(1);
+        }
+        25% {
+            transform: translate(-50%,-50%) rotate(20deg) scale(.9);
+        }
+        50% {
+            border-radius: 40%;
+            transform: translate(-50%,-50%) rotate(-30deg) scale(.65);
+        }
+        75% {
+            border-radius: 50%;
+            transform: translate(-50%,-50%) rotate(45deg) scale(.4);
+        }
+        100% {
+            border-radius: 50%;
+            transform: translate(-50%,-50%) rotate(180deg) scale(.15);
+            opacity: 0;
+        }
+    }
+
+    /* Message */
+    .message {
+        text-align: center;
+        font-family: "Caveat", cursive;
+        font-size: 30px;
+        margin: 20px 0;
+        color: #6c4930;
+        min-height: 40px;
+    }
+
+    .reset {
+        display: block;
+        margin: 25px auto 0;
+        background: transparent;
+        border: 2px solid #293d59;
+        color: #293d59;
+        padding: 8px 20px;
+        font-family: "Patrick Hand", cursive;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .doodle {
+        position: absolute;
+        font-size: 35px;
+        opacity: .45;
+        pointer-events: none;
+    }
+
+    .star {
+        right: 40px;
+        top: 50px;
+        transform: rotate(15deg);
+    }
+
+    .smiley {
+        right: 55px;
+        bottom: 80px;
+        transform: rotate(-10deg);
+    }
+
+    .plane {
+        left: 110px;
+        bottom: 25px;
+        transform: rotate(-10deg);
+    }
+
+    /* Mobile */
+    @media (max-width: 700px) {
+        .notebook {
+            padding: 35px 25px 50px 65px;
+        }
+
+        .notebook::before {
+            left: 48px;
+        }
+
+        .ideas {
+            grid-template-columns: 1fr;
+        }
+
+        .table {
+            height: 520px;
+        }
+
+        h1 {
+            font-size: 60px;
+        }
+
+        .chit {
+            width: 105px;
+            height: 65px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="notebook">
+
+    <div class="holes">
+        <div class="hole"></div>
+        <div class="hole"></div>
+        <div class="hole"></div>
+        <div class="hole"></div>
+        <div class="hole"></div>
+        <div class="hole"></div>
+        <div class="hole"></div>
+        <div class="hole"></div>
+    </div>
+
+    <div class="doodle star">★</div>
+    <div class="doodle smiley">☺</div>
+    <div class="doodle plane">✈</div>
+
+    <h1>Lucky Chits</h1>
+    <div class="subtitle">
+        Five ideas. Five little papers. One questionable decision.
+    </div>
+
+    <!-- SETUP -->
+    <div id="setup">
+
+        <div class="section">
+            <label>👥 Who's playing?</label>
+
+            <div class="player-choice">
+                <button class="player-btn active" id="p1Btn"
+                        onclick="selectPlayers(1)">
+                    Player 1
+                </button>
+
+                <button class="player-btn" id="p2Btn"
+                        onclick="selectPlayers(2)">
+                    Player 1 + Player 2
+                </button>
+            </div>
+        </div>
+
+        <div class="section">
+            <label>✏️ Write your five things</label>
+
+            <div class="ideas">
+                <input id="idea1" placeholder="Thing #1">
+                <input id="idea2" placeholder="Thing #2">
+                <input id="idea3" placeholder="Thing #3">
+                <input id="idea4" placeholder="Thing #4">
+                <input id="idea5" placeholder="Thing #5">
+            </div>
+
+            <button class="main-btn" onclick="createChits()">
+                ✂️ Fold & Crumple My Chits
+            </button>
+        </div>
+
+    </div>
+
+
+    <!-- GAME -->
+    <div id="game">
+
+        <div class="turn" id="turnText">
+            Player 1's turn
+        </div>
+
+        <div class="instruction" id="instruction">
+            Pick one crumpled chit.
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="table" id="table"></div>
+
+        <button class="reset" onclick="resetGame()">
+            ↻ Start Again
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- Crumple animation -->
+<div class="paper" id="paper"></div>
+
+
+<script>
+
+let players = 1;
+let currentPlayer = 1;
+let selectedChits = [];
+let gameIdeas = [];
+
+
+// -----------------------------------------
+// PLAYER SELECTION
+// -----------------------------------------
+
+function selectPlayers(number) {
+
+    players = number;
+
+    document.getElementById("p1Btn")
+        .classList.toggle("active", number === 1);
+
+    document.getElementById("p2Btn")
+        .classList.toggle("active", number === 2);
+}
+
+
+// -----------------------------------------
+// CREATE THE CHITS
+// -----------------------------------------
+
+function createChits() {
+
+    gameIdeas = [];
+
+    for (let i = 1; i <= 5; i++) {
+
+        const value =
+            document.getElementById("idea" + i).value.trim();
+
+        if (!value) {
+            alert("You need to fill in all five ideas.");
+            return;
+        }
+
+        gameIdeas.push(value);
+    }
+
+    // Hide setup
+    document.getElementById("setup").style.display = "none";
+
+    // Show game
+    document.getElementById("game").style.display = "block";
+
+    // Play crumpling animation
+    const paper = document.getElementById("paper");
+
+    paper.classList.remove("crumpling");
+
+    // Force animation restart
+    void paper.offsetWidth;
+
+    paper.classList.add("crumpling");
+
+    setTimeout(() => {
+
+        createTableChits();
+
+    }, 1400);
+}
+
+
+// -----------------------------------------
+// CREATE RANDOM CHITS
+// -----------------------------------------
+
+function createTableChits() {
+
+    const table = document.getElementById("table");
+
+    table.innerHTML = "";
+
+    selectedChits = [];
+
+    const positions = [
+        [15, 20, -15],
+        [65, 15, 12],
+        [40, 40, -7],
+        [15, 65, 8],
+        [68, 65, -13]
+    ];
+
+    gameIdeas.forEach((idea, index) => {
+
+        const chit = document.createElement("div");
+
+        chit.className = "chit";
+
+        chit.dataset.index = index;
+
+        chit.dataset.answer = idea;
+
+        chit.style.left = positions[index][0] + "%";
+        chit.style.top = positions[index][1] + "%";
+        chit.style.setProperty(
+            "--rotation",
+            positions[index][2] + "deg"
+        );
+
+        chit.style.animationDelay =
+            (index * 0.12) + "s";
+
+        chit.onclick = () => pickChit(chit);
+
+        table.appendChild(chit);
+    });
+
+    updateTurn();
+}
+
+
+// -----------------------------------------
+// PICK A CHIT
+// -----------------------------------------
+
+function pickChit(chit) {
+
+    // Don't allow picking an already selected chit
+    if (chit.classList.contains("picked")) {
+        return;
+    }
+
+    // Don't allow more than one chit per player
+    if (selectedChits.includes(chit)) {
+        return;
+    }
+
+    selectedChits.push(chit);
+
+    chit.classList.add("picked");
+
+    const answer = chit.dataset.answer;
+
+    setTimeout(() => {
+
+        revealChit(chit, answer);
+
+    }, 700);
+}
+
+
+// -----------------------------------------
+// REVEAL
+// -----------------------------------------
+
+function revealChit(chit, answer) {
+
+    chit.classList.remove("picked");
+
+    chit.classList.add("revealed");
+
+    chit.textContent = answer;
+
+    document.getElementById("message").textContent =
+        "🎉 Player " + currentPlayer + " picked: " + answer;
+
+    // If two players are playing
+    if (players === 2 && currentPlayer === 1) {
+
+        setTimeout(() => {
+
+            currentPlayer = 2;
+
+            updateTurn();
+
+        }, 1700);
+
+    } else {
+
+        setTimeout(() => {
+
+            document.getElementById("turnText").textContent =
+                "🎊 All done!";
+
+            document.getElementById("instruction").textContent =
+                "The choices have been revealed.";
+
+        }, 1700);
+    }
+}
+
+
+// -----------------------------------------
+// TURN DISPLAY
+// -----------------------------------------
+
+function updateTurn() {
+
+    document.getElementById("turnText").textContent =
+        "Player " + currentPlayer + "'s turn";
+
+    if (players === 2) {
+
+        document.getElementById("instruction").textContent =
+            "Player " + currentPlayer +
+            ", pick one of the remaining chits.";
+
+    } else {
+
+        document.getElementById("instruction").textContent =
+            "Pick one crumpled chit.";
+    }
+
+    document.getElementById("message").textContent = "";
+}
+
+
+// -----------------------------------------
+// RESET
+// -----------------------------------------
+
+function resetGame() {
+
+    document.getElementById("game").style.display = "none";
+
+    document.getElementById("setup").style.display = "block";
+
+    document.getElementById("table").innerHTML = "";
+
+    document.getElementById("message").textContent = "";
+
+    currentPlayer = 1;
+
+    selectedChits = [];
+}
+
+</script>
+
+</body>
+</html>
